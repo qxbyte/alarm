@@ -9,8 +9,7 @@ struct AlarmEditView: View {
 
     @State private var time: Date
     @State private var label: String
-    @State private var repeatPreset: AlarmRepeatPreset
-    @State private var customWeekdays: Set<Int>
+    @State private var selectedWeekdays: Set<Int>
     @State private var soundName: String
     @State private var snoozeEnabled: Bool
     @State private var snoozeMinutes: Int
@@ -18,6 +17,7 @@ struct AlarmEditView: View {
     @State private var isEnabled: Bool
 
     @State private var showSnoozePicker = false
+    @State private var showRepeatSheet = false
 
     init(existing: AlarmItem? = nil, onSave: @escaping (AlarmItem) -> Void, onDelete: ((UUID) -> Void)? = nil) {
         self.existing = existing
@@ -26,8 +26,7 @@ struct AlarmEditView: View {
 
         _time = State(initialValue: existing?.time ?? Date())
         _label = State(initialValue: existing?.label ?? "闹钟")
-        _repeatPreset = State(initialValue: existing?.repeatRule.preset ?? .weekdays)
-        _customWeekdays = State(initialValue: existing?.repeatRule.weekdays ?? [2, 3, 4, 5, 6])
+        _selectedWeekdays = State(initialValue: existing?.repeatRule.weekdays ?? Set([2, 3, 4, 5, 6]))
         _soundName = State(initialValue: existing?.soundName ?? "雷达")
         _snoozeEnabled = State(initialValue: existing?.snoozeEnabled ?? true)
         _snoozeMinutes = State(initialValue: existing?.snoozeMinutes ?? 9)
@@ -41,14 +40,18 @@ struct AlarmEditView: View {
                 DatePicker("时间", selection: $time, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.wheel)
 
-                Picker("重复", selection: $repeatPreset) {
-                    ForEach(AlarmRepeatPreset.allCases) { preset in
-                        Text(preset.title).tag(preset)
+                Button {
+                    showRepeatSheet = true
+                } label: {
+                    HStack {
+                        Text("重复")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(AlarmRepeatRule.custom(selectedWeekdays).displayText)
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.tertiary)
                     }
-                }
-
-                if repeatPreset == .custom {
-                    weekdayChips
                 }
 
                 TextField("标签", text: $label)
@@ -99,6 +102,9 @@ struct AlarmEditView: View {
                 }
             }
             .navigationTitle(existing == nil ? "新建闹钟" : "编辑闹钟")
+            .sheet(isPresented: $showRepeatSheet) {
+                RepeatSelectionView(selectedWeekdays: $selectedWeekdays)
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -127,37 +133,8 @@ struct AlarmEditView: View {
         }
     }
 
-    private var weekdayChips: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("自定义重复")
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 8) {
-                ForEach(1 ... 7, id: \.self) { day in
-                    let selected = customWeekdays.contains(day)
-                    Button(AlarmRepeatRule.weekdayTitle(day)) {
-                        if selected {
-                            customWeekdays.remove(day)
-                        } else {
-                            customWeekdays.insert(day)
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(selected ? .orange : .gray)
-                }
-            }
-        }
-    }
-
     private func buildAlarm() -> AlarmItem {
-        let repeatRule: AlarmRepeatRule
-
-        switch repeatPreset {
-        case .everyDay:
-            repeatRule = .everyDay
-        case .weekdays:
-            repeatRule = .weekdays
-        case .custom:
-            repeatRule = .custom(customWeekdays)
-        }
+        let repeatRule = normalizedRepeatRule()
 
         return AlarmItem(
             id: existing?.id ?? UUID(),
@@ -174,8 +151,63 @@ struct AlarmEditView: View {
             updatedAt: Date()
         )
     }
+
+    private func normalizedRepeatRule() -> AlarmRepeatRule {
+        if selectedWeekdays == Set(1 ... 7) {
+            return .everyDay
+        }
+        if selectedWeekdays == Set([2, 3, 4, 5, 6]) {
+            return .weekdays
+        }
+        return .custom(selectedWeekdays)
+    }
 }
 
 #Preview {
     AlarmEditView { _ in }
+}
+
+private struct RepeatSelectionView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedWeekdays: Set<Int>
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(1 ... 7, id: \.self) { day in
+                    Button {
+                        toggle(day)
+                    } label: {
+                        HStack {
+                            Text(AlarmRepeatRule.weekdayRowTitle(day))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if selectedWeekdays.contains(day) {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("重复")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                }
+            }
+        }
+    }
+
+    private func toggle(_ day: Int) {
+        if selectedWeekdays.contains(day) {
+            selectedWeekdays.remove(day)
+        } else {
+            selectedWeekdays.insert(day)
+        }
+    }
 }
