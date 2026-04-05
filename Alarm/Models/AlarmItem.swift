@@ -110,20 +110,19 @@ struct AlarmRepeatRule: Codable, Equatable {
     }
 
     var displayText: String {
-        switch preset {
-        case .everyDay:
+        if weekdays == Set(1 ... 7) {
             return "每天"
-        case .weekdays:
-            return "工作日"
-        case .custom:
-            if weekdays.isEmpty {
-                return "不重复"
-            }
-            return weekdays
-                .sorted()
-                .map { Self.weekdayTitle($0) }
-                .joined(separator: "、")
         }
+        if weekdays == Set([2, 3, 4, 5, 6]) {
+            return "工作日"
+        }
+        if weekdays == Set([1, 7]) {
+            return "周末"
+        }
+        if weekdays.isEmpty {
+            return "永不"
+        }
+        return weekdaysSummary(weekdays.sorted())
     }
 
     static func weekdayTitle(_ day: Int) -> String {
@@ -137,5 +136,30 @@ struct AlarmRepeatRule: Codable, Equatable {
         case 7: return "周六"
         default: return "-"
         }
+    }
+
+    static func weekdayRowTitle(_ day: Int) -> String {
+        switch day {
+        case 1: return "每周日"
+        case 2: return "每周一"
+        case 3: return "每周二"
+        case 4: return "每周三"
+        case 5: return "每周四"
+        case 6: return "每周五"
+        case 7: return "每周六"
+        default: return "-"
+        }
+    }
+
+    private func weekdaysSummary(_ sortedDays: [Int]) -> String {
+        let labels = sortedDays.map { Self.weekdayTitle($0) }
+        if labels.count == 1 {
+            return labels[0]
+        }
+        if labels.count == 2 {
+            return "\(labels[0])和\(labels[1])"
+        }
+        let head = labels.dropLast().joined(separator: "、")
+        return "\(head)和\(labels.last ?? "")"
     }
 }
