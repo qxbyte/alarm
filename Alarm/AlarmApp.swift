@@ -9,9 +9,20 @@ import SwiftUI
 
 @main
 struct AlarmApp: App {
+    @StateObject private var store = AlarmStore(scheduler: buildScheduler())
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(store)
         }
+    }
+
+    private static func buildScheduler() -> AlarmScheduler {
+        #if canImport(AlarmKit)
+        return AlarmKitScheduler()
+        #else
+        return NoopAlarmScheduler()
+        #endif
     }
 }
