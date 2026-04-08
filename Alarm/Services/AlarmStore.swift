@@ -35,7 +35,7 @@ final class AlarmStore: ObservableObject {
         do {
             try await scheduler.requestAuthorization()
         } catch {
-            lastErrorMessage = "闹钟权限请求失败：\(error.localizedDescription)"
+            lastErrorMessage = friendlyAlarmErrorMessage(prefix: "闹钟权限请求失败", error: error)
         }
     }
 
@@ -79,7 +79,7 @@ final class AlarmStore: ObservableObject {
                 do {
                     try await scheduler.cancel(item)
                 } catch {
-                    lastErrorMessage = "取消闹钟失败：\(error.localizedDescription)"
+                    lastErrorMessage = friendlyAlarmErrorMessage(prefix: "取消闹钟失败", error: error)
                 }
             }
         }
@@ -94,7 +94,7 @@ final class AlarmStore: ObservableObject {
             do {
                 try await scheduler.cancel(item)
             } catch {
-                lastErrorMessage = "删除闹钟失败：\(error.localizedDescription)"
+                lastErrorMessage = friendlyAlarmErrorMessage(prefix: "删除闹钟失败", error: error)
             }
         }
     }
@@ -132,8 +132,17 @@ final class AlarmStore: ObservableObject {
         do {
             try await scheduler.schedule(item, nextDate: nextDate)
         } catch {
-            lastErrorMessage = "调度闹钟失败：\(error.localizedDescription)"
+            lastErrorMessage = friendlyAlarmErrorMessage(prefix: "调度闹钟失败", error: error)
         }
+    }
+
+    private func friendlyAlarmErrorMessage(prefix: String, error: Error) -> String {
+        let nsError = error as NSError
+        if nsError.domain == "com.apple.AlarmKit.Alarm", nsError.code == 1 {
+            return "\(prefix)：系统拒绝了 AlarmKit 请求（错误码 1）。请在 Xcode > Signing & Capabilities 中启用 AlarmKit 能力，确认真机已开启开发者模式并重新安装应用。原始错误：\(nsError.localizedDescription)"
+        }
+
+        return "\(prefix)：\(error.localizedDescription)"
     }
 
     private func nextTriggerDate(for item: AlarmItem, from baseDate: Date) -> Date? {

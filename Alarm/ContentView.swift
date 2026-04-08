@@ -25,6 +25,7 @@ struct ContentView: View {
                     Label("计时器", systemImage: "timer")
                 }
         }
+        .preferredColorScheme(.light)
     }
 }
 

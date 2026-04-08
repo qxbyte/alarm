@@ -5,39 +5,22 @@ struct AlarmListView: View {
 
     @State private var isPresentingAdd = false
     @State private var editingItem: AlarmItem?
-    @State private var isPresentingHolidayConfig = false
+    @State private var isEditing = false
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(store.alarms) { item in
-                    alarmRow(item)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            editingItem = item
-                        }
-                }
-                .onDelete { offsets in
-                    for offset in offsets {
-                        store.removeAlarm(id: store.alarms[offset].id)
-                    }
-                }
+            ZStack {
+                Color(white: 0.96)
+                    .ignoresSafeArea()
 
-                Button {
-                    isPresentingAdd = true
-                } label: {
-                    Label("添加闹钟", systemImage: "plus.circle.fill")
-                }
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("闹钟")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isPresentingHolidayConfig = true
-                    } label: {
-                        Image(systemName: "gearshape")
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        topBar
+                        title
+                        alarmSection
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
                 }
             }
             .task {
@@ -71,9 +54,60 @@ struct AlarmListView: View {
                     }
                 )
             }
-            .sheet(isPresented: $isPresentingHolidayConfig) {
-                HolidayConfigView(settings: store.settings) { updated in
-                    store.saveSettings(updated)
+        }
+        .preferredColorScheme(.light)
+    }
+
+    private var topBar: some View {
+        HStack {
+            Button(isEditing ? "完成" : "编辑") {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isEditing.toggle()
+                }
+            }
+            .font(.system(size: 18, weight: .regular, design: .rounded))
+            .foregroundStyle(Color(white: 0.18))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Color.white))
+
+            Spacer()
+
+            Button {
+                isPresentingAdd = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .regular))
+                    .foregroundStyle(Color(white: 0.18))
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(Color.white))
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    private var title: some View {
+        Text("闹钟")
+            .font(.system(size: 36, weight: .semibold))
+            .foregroundStyle(Color(white: 0.12))
+            .padding(.top, 2)
+    }
+
+    private var alarmSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+                .overlay(Color(white: 0.84))
+
+            if store.alarms.isEmpty {
+                Text("暂无闹钟")
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundStyle(Color(white: 0.5))
+                    .padding(.vertical, 10)
+            } else {
+                ForEach(displayAlarms) { item in
+                    alarmRow(item)
+                    Divider()
+                        .overlay(Color(white: 0.84))
                 }
             }
         }
@@ -81,28 +115,52 @@ struct AlarmListView: View {
 
     @ViewBuilder
     private func alarmRow(_ item: AlarmItem) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(item.time.alarmTimeText())
-                    .font(.system(size: 42, weight: .medium, design: .rounded))
-
-                Spacer()
-
-                Toggle("", isOn: Binding(
-                    get: { item.isEnabled },
-                    set: { store.toggleAlarm(id: item.id, isOn: $0) }
-                ))
-                .labelsHidden()
+        HStack(spacing: 10) {
+            if isEditing {
+                Button {
+                    store.removeAlarm(id: item.id)
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.red)
+                }
             }
 
-            Text("\(item.repeatRule.displayText) · \(item.label)")
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.time.alarmTimeText())
+                    .font(.system(size: 68, weight: .light))
+                    .foregroundStyle(item.isEnabled ? Color(white: 0.1) : Color(white: 0.6))
 
-            Text(store.nextTriggerText(for: item))
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                Text(item.label)
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundStyle(Color(white: 0.5))
+            }
+
+            Spacer()
+
+            Toggle("", isOn: Binding(
+                get: { item.isEnabled },
+                set: { store.toggleAlarm(id: item.id, isOn: $0) }
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .onTapGesture {}
         }
-        .padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard !isEditing else { return }
+            editingItem = item
+        }
+    }
+
+    private var displayAlarms: [AlarmItem] {
+        store.alarms.sorted {
+            let lhs = Calendar.current.dateComponents([.hour, .minute], from: $0.time)
+            let rhs = Calendar.current.dateComponents([.hour, .minute], from: $1.time)
+            let lhsValue = (lhs.hour ?? 0) * 60 + (lhs.minute ?? 0)
+            let rhsValue = (rhs.hour ?? 0) * 60 + (rhs.minute ?? 0)
+            return lhsValue < rhsValue
+        }
     }
 }
 
