@@ -9,34 +9,40 @@ struct TimerView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Text(format(remainingSeconds))
-                    .font(.system(size: 56, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
+            ZStack {
+                Color(white: 0.96)
+                    .ignoresSafeArea()
 
-                Stepper("时长：\(durationSeconds / 60) 分钟", value: $durationSeconds, in: 60 ... 24 * 3600, step: 60)
-                    .disabled(isRunning)
-                    .onChange(of: durationSeconds) { _, newValue in
-                        if !isRunning {
-                            remainingSeconds = newValue
+                VStack(spacing: 24) {
+                    Text(format(remainingSeconds))
+                        .font(.system(size: 68, weight: .light, design: .rounded))
+                        .monospacedDigit()
+
+                    Stepper("时长：\(durationSeconds / 60) 分钟", value: $durationSeconds, in: 60 ... 24 * 3600, step: 60)
+                        .font(.system(size: 16, weight: .regular))
+                        .disabled(isRunning)
+                        .onChange(of: durationSeconds) { _, newValue in
+                            if !isRunning {
+                                remainingSeconds = newValue
+                            }
                         }
-                    }
 
-                HStack(spacing: 16) {
-                    Button("重置") {
-                        stop()
-                        remainingSeconds = durationSeconds
-                    }
-                    .buttonStyle(.bordered)
+                    HStack(spacing: 16) {
+                        Button("重置") {
+                            stop()
+                            remainingSeconds = durationSeconds
+                        }
+                        .buttonStyle(.bordered)
 
-                    Button(isRunning ? "暂停" : "开始") {
-                        isRunning ? stop() : start()
+                        Button(isRunning ? "暂停" : "开始") {
+                            isRunning ? stop() : start()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
                 }
+                .padding()
             }
-            .padding()
             .navigationTitle("计时器")
             .onReceive(ticker) { _ in
                 guard isRunning else { return }
@@ -47,6 +53,7 @@ struct TimerView: View {
                 }
             }
         }
+        .preferredColorScheme(.light)
     }
 
     private func start() {

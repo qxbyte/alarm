@@ -10,44 +10,55 @@ struct StopwatchView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Text(format(elapsed))
-                    .font(.system(size: 56, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
+            ZStack {
+                Color(white: 0.96)
+                    .ignoresSafeArea()
 
-                HStack(spacing: 16) {
-                    Button(isRunning ? "计圈" : "重置") {
-                        if isRunning {
-                            laps.insert(elapsed, at: 0)
-                        } else {
-                            reset()
+                VStack(spacing: 24) {
+                    Text(format(elapsed))
+                        .font(.system(size: 68, weight: .light, design: .rounded))
+                        .monospacedDigit()
+
+                    HStack(spacing: 16) {
+                        Button(isRunning ? "计圈" : "重置") {
+                            if isRunning {
+                                laps.insert(elapsed, at: 0)
+                            } else {
+                                reset()
+                            }
                         }
-                    }
-                    .buttonStyle(.bordered)
+                        .buttonStyle(.bordered)
 
-                    Button(isRunning ? "停止" : "开始") {
-                        isRunning ? stop() : start()
+                        Button(isRunning ? "停止" : "开始") {
+                            isRunning ? stop() : start()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                }
 
-                List(Array(laps.enumerated()), id: \.offset) { index, value in
-                    HStack {
-                        Text("第\(laps.count - index)圈")
-                        Spacer()
-                        Text(format(value))
-                            .monospacedDigit()
+                    List(Array(laps.enumerated()), id: \.offset) { index, value in
+                        HStack {
+                            Text("第\(laps.count - index)圈")
+                                .font(.system(size: 16, weight: .regular))
+                            Spacer()
+                            Text(format(value))
+                                .font(.system(size: 16, weight: .regular))
+                                .monospacedDigit()
+                        }
+                        .listRowBackground(Color(white: 0.96))
                     }
+                    .scrollContentBackground(.hidden)
+                    .listStyle(.plain)
                 }
+                .padding()
             }
-            .padding()
             .navigationTitle("秒表")
             .onReceive(ticker) { _ in
                 guard isRunning, let startDate else { return }
                 elapsed = Date().timeIntervalSince(startDate)
             }
         }
+        .preferredColorScheme(.light)
     }
 
     private func start() {

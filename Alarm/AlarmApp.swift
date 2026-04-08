@@ -20,9 +20,9 @@ struct AlarmApp: App {
 
     private static func buildScheduler() -> AlarmScheduler {
         #if canImport(AlarmKit)
-        return AlarmKitScheduler()
+        return AdaptiveAlarmScheduler(primary: AlarmKitScheduler())
         #else
-        return NoopAlarmScheduler()
+        return NotificationAlarmScheduler()
         #endif
     }
 }
