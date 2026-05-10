@@ -95,6 +95,20 @@ struct AlarmListView: View {
 
     private var alarmSection: some View {
         VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("已启用 \(enabledAlarmCount) 个")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(Color(white: 0.45))
+
+                Spacer()
+
+                if !store.alarms.isEmpty {
+                    Text("共 \(store.alarms.count) 个闹钟")
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(Color(white: 0.55))
+                }
+            }
+
             Divider()
                 .overlay(Color(white: 0.84))
 
@@ -161,6 +175,10 @@ struct AlarmListView: View {
             let rhsValue = (rhs.hour ?? 0) * 60 + (rhs.minute ?? 0)
             return lhsValue < rhsValue
         }
+    }
+
+    private var enabledAlarmCount: Int {
+        store.alarms.filter(\.isEnabled).count
     }
 }
 
