@@ -132,6 +132,12 @@ struct AlarmListView: View {
             if store.alarms.isEmpty {
                 emptyStateCard
             } else {
+                if let upcomingAlarm = upcomingAlarm {
+                    upcomingAlarmCard(for: upcomingAlarm)
+                        .padding(.top, 6)
+                        .padding(.bottom, 4)
+                }
+
                 ForEach(displayAlarms) { item in
                     alarmRow(item)
                 }
@@ -203,16 +209,43 @@ struct AlarmListView: View {
 
     private var displayAlarms: [AlarmItem] {
         store.alarms.sorted {
-            let lhs = Calendar.current.dateComponents([.hour, .minute], from: $0.time)
-            let rhs = Calendar.current.dateComponents([.hour, .minute], from: $1.time)
-            let lhsValue = (lhs.hour ?? 0) * 60 + (lhs.minute ?? 0)
-            let rhsValue = (rhs.hour ?? 0) * 60 + (rhs.minute ?? 0)
-            return lhsValue < rhsValue
+            if $0.isEnabled != $1.isEnabled {
+                return $0.isEnabled && !$1.isEnabled
+            }
+
+            let lhsNext = store.nextTriggerDate(for: $0)
+            let rhsNext = store.nextTriggerDate(for: $1)
+
+            switch (lhsNext, rhsNext) {
+            case let (lhsDate?, rhsDate?):
+                if lhsDate != rhsDate {
+                    return lhsDate < rhsDate
+                }
+            case (_?, nil):
+                return true
+            case (nil, _?):
+                return false
+            case (nil, nil):
+                break
+            }
+
+            return alarmTimeValue(for: $0) < alarmTimeValue(for: $1)
         }
     }
 
     private var enabledAlarmCount: Int {
         store.alarms.filter(\.isEnabled).count
+    }
+
+    private var upcomingAlarm: AlarmItem? {
+        store.alarms
+            .filter(\.isEnabled)
+            .compactMap { item in
+                guard let nextDate = store.nextTriggerDate(for: item) else { return nil }
+                return (item, nextDate)
+            }
+            .min { $0.1 < $1.1 }?
+            .0
     }
 
     private var emptyStateCard: some View {
@@ -235,9 +268,63 @@ struct AlarmListView: View {
         .padding(.top, 6)
     }
 
+    private func upcomingAlarmCard(for item: AlarmItem) -> some View {
+        let nextDate = store.nextTriggerDate(for: item)
+        let title = item.label == "闹钟" ? "最近提醒" : "最近提醒 · \(item.label)"
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color.orange)
+
+            Text(item.time.alarmTimeText())
+                .font(.system(size: 40, weight: .light))
+                .foregroundStyle(Color(white: 0.12))
+
+            if let nextDate {
+                Text("预计在 \(nextDate.alarmDisplayText()) 响铃")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(Color(white: 0.42))
+
+                Text(relativeTimeText(to: nextDate))
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(Color(white: 0.58))
+            } else {
+                Text("当前规则下暂无下次提醒")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(Color(white: 0.48))
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color.white)
+        )
+    }
+
     private func repeatSummary(for item: AlarmItem) -> String {
         let holidayText = item.skipHolidayEnabled ? "节假日跳过" : "节假日照常"
         return "\(item.repeatRule.displayText) · \(holidayText)"
+    }
+
+    private func alarmTimeValue(for item: AlarmItem) -> Int {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: item.time)
+        return (components.hour ?? 0) * 60 + (components.minute ?? 0)
+    }
+
+    private func relativeTimeText(to date: Date) -> String {
+        let interval = max(Int(date.timeIntervalSinceNow), 0)
+        let hours = interval / 3600
+        let minutes = (interval % 3600) / 60
+
+        if hours == 0 {
+            return "\(max(minutes, 1)) 分钟后"
+        }
+        if minutes == 0 {
+            return "\(hours) 小时后"
+        }
+        return "\(hours) 小时 \(minutes) 分钟后"
     }
 }
 
