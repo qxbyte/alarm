@@ -113,10 +113,7 @@ struct AlarmListView: View {
                 .overlay(Color(white: 0.84))
 
             if store.alarms.isEmpty {
-                Text("暂无闹钟")
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundStyle(Color(white: 0.5))
-                    .padding(.vertical, 10)
+                emptyStateCard
             } else {
                 ForEach(displayAlarms) { item in
                     alarmRow(item)
@@ -148,10 +145,15 @@ struct AlarmListView: View {
                 Text(item.label)
                     .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(Color(white: 0.5))
-                
-                Text(item.repeatRule.displayText)
+
+                Text(repeatSummary(for: item))
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(Color(white: 0.6))
+
+                Text(store.nextTriggerText(for: item))
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(Color(white: 0.42))
+                    .lineLimit(2)
             }
 
             Spacer()
@@ -183,6 +185,31 @@ struct AlarmListView: View {
 
     private var enabledAlarmCount: Int {
         store.alarms.filter(\.isEnabled).count
+    }
+
+    private var emptyStateCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("暂无闹钟")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Color(white: 0.18))
+
+            Text("点击右上角 + 创建第一个闹钟，列表会在这里显示重复规则和下一次提醒。")
+                .font(.system(size: 15, weight: .regular))
+                .foregroundStyle(Color(white: 0.48))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color.white)
+        )
+        .padding(.top, 6)
+    }
+
+    private func repeatSummary(for item: AlarmItem) -> String {
+        let holidayText = item.skipHolidayEnabled ? "节假日跳过" : "节假日照常"
+        return "\(item.repeatRule.displayText) · \(holidayText)"
     }
 }
 
