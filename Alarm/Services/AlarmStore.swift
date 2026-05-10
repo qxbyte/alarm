@@ -112,11 +112,15 @@ final class AlarmStore: ObservableObject {
     func nextTriggerText(for item: AlarmItem) -> String {
         guard item.isEnabled else { return "已关闭" }
 
-        guard let nextDate = nextTriggerDate(for: item, from: Date()) else {
+        guard let nextDate = nextTriggerDate(for: item) else {
             return "暂无下次提醒"
         }
 
         return "下次：\(nextDate.alarmDisplayText()) · 节假日跳过 \(item.skipHolidayEnabled ? "🟢" : "🔴")"
+    }
+
+    func nextTriggerDate(for item: AlarmItem) -> Date? {
+        nextTriggerDate(for: item, from: Date())
     }
 
     private func rescheduleEnabledAlarms() async {
