@@ -19,6 +19,10 @@ struct StopwatchView: View {
                         .font(.system(size: 68, weight: .light, design: .rounded))
                         .monospacedDigit()
 
+                    Text(statusText)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(Color(white: 0.42))
+
                     HStack(spacing: 16) {
                         Button(isRunning ? "计圈" : "重置") {
                             if isRunning {
@@ -36,19 +40,26 @@ struct StopwatchView: View {
                         .tint(.orange)
                     }
 
-                    List(Array(laps.enumerated()), id: \.offset) { index, value in
-                        HStack {
-                            Text("第\(laps.count - index)圈")
-                                .font(.system(size: 16, weight: .regular))
-                            Spacer()
-                            Text(format(value))
-                                .font(.system(size: 16, weight: .regular))
-                                .monospacedDigit()
+                    if laps.isEmpty {
+                        Text("开始后可记录计圈时间")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(Color(white: 0.55))
+                            .frame(maxWidth: .infinity, minHeight: 120)
+                    } else {
+                        List(Array(laps.enumerated()), id: \.offset) { index, value in
+                            HStack {
+                                Text("第\(laps.count - index)圈")
+                                    .font(.system(size: 16, weight: .regular))
+                                Spacer()
+                                Text(format(value))
+                                    .font(.system(size: 16, weight: .regular))
+                                    .monospacedDigit()
+                            }
+                            .listRowBackground(Color(white: 0.96))
                         }
-                        .listRowBackground(Color(white: 0.96))
+                        .scrollContentBackground(.hidden)
+                        .listStyle(.plain)
                     }
-                    .scrollContentBackground(.hidden)
-                    .listStyle(.plain)
                 }
                 .padding()
             }
@@ -81,6 +92,16 @@ struct StopwatchView: View {
         let seconds = total % 60
         let fraction = Int((value - floor(value)) * 100)
         return String(format: "%02d:%02d.%02d", minutes, seconds, fraction)
+    }
+
+    private var statusText: String {
+        if isRunning {
+            return "正在计时，可随时记录计圈"
+        }
+        if elapsed > 0 {
+            return "已暂停，可继续或重置"
+        }
+        return "准备开始"
     }
 }
 
