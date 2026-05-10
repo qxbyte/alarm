@@ -140,14 +140,18 @@ struct AlarmListView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.time.alarmTimeText())
-                    .font(.system(size: 68, weight: .light))
+                    .font(.system(size: 60, weight: .light))
                     .foregroundStyle(item.isEnabled ? Color(white: 0.1) : Color(white: 0.6))
 
                 Text(item.label)
-                    .font(.system(size: 17, weight: .regular))
+                    .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(Color(white: 0.5))
+                
+                Text(item.repeatRule.displayText)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(Color(white: 0.6))
             }
 
             Spacer()
