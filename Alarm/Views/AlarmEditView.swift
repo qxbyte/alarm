@@ -179,6 +179,8 @@ struct AlarmEditView: View {
                 }
                 .pickerStyle(.wheel)
                 .frame(height: 160)
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: showSnoozePicker)
             }
 
             divider

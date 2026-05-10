@@ -6,6 +6,7 @@ struct AlarmListView: View {
     @State private var isPresentingAdd = false
     @State private var editingItem: AlarmItem?
     @State private var isEditing = false
+    @State private var itemToDelete: AlarmItem?
 
     var body: some View {
         NavigationStack {
@@ -53,6 +54,22 @@ struct AlarmListView: View {
                         store.removeAlarm(id: id)
                     }
                 )
+            }
+            .alert("确认删除", isPresented: Binding(
+                get: { itemToDelete != nil },
+                set: { if !$0 { itemToDelete = nil } }
+            )) {
+                Button("删除", role: .destructive) {
+                    if let item = itemToDelete {
+                        store.removeAlarm(id: item.id)
+                        itemToDelete = nil
+                    }
+                }
+                Button("取消", role: .cancel) {
+                    itemToDelete = nil
+                }
+            } message: {
+                Text("确定要删除这个闹钟吗？")
             }
         }
         .preferredColorScheme(.light)
@@ -117,8 +134,6 @@ struct AlarmListView: View {
             } else {
                 ForEach(displayAlarms) { item in
                     alarmRow(item)
-                    Divider()
-                        .overlay(Color(white: 0.84))
                 }
             }
         }
@@ -129,7 +144,7 @@ struct AlarmListView: View {
         HStack(spacing: 10) {
             if isEditing {
                 Button {
-                    store.removeAlarm(id: item.id)
+                    itemToDelete = item
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.system(size: 22))
@@ -142,13 +157,19 @@ struct AlarmListView: View {
                     .font(.system(size: 60, weight: .light))
                     .foregroundStyle(item.isEnabled ? Color(white: 0.1) : Color(white: 0.6))
 
-                Text(item.label)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(Color(white: 0.5))
-
-                Text(repeatSummary(for: item))
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(Color(white: 0.6))
+                HStack(spacing: 4) {
+                    Text(item.label)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(Color(white: 0.5))
+                    
+                    Text("·")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(Color(white: 0.6))
+                    
+                    Text(repeatSummary(for: item))
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(Color(white: 0.6))
+                }
 
                 Text(store.nextTriggerText(for: item))
                     .font(.system(size: 13, weight: .regular))
@@ -166,6 +187,13 @@ struct AlarmListView: View {
             .toggleStyle(.switch)
             .onTapGesture {}
         }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        )
+        .opacity(item.isEnabled ? 1.0 : 0.6)
         .contentShape(Rectangle())
         .onTapGesture {
             guard !isEditing else { return }
