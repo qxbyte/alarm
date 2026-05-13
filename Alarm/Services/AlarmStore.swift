@@ -161,10 +161,11 @@ final class AlarmStore: ObservableObject {
             }
 
             let weekday = calendar.component(.weekday, from: candidate)
-            let isWorkdayOverride = holidayService.isWorkdayOverride(candidate, settings: settings, entries: holidayEntries)
             let matchRepeat: Bool
             if item.repeatRule.preset == .weekdays {
-                matchRepeat = item.repeatRule.weekdays.contains(weekday) || isWorkdayOverride
+                let includesMakeUpWorkday = item.smartMakeUpEnabled
+                    && holidayService.isWorkdayOverride(candidate, settings: settings, entries: holidayEntries)
+                matchRepeat = item.repeatRule.weekdays.contains(weekday) || includesMakeUpWorkday
             } else {
                 matchRepeat = item.repeatRule.weekdays.contains(weekday)
             }

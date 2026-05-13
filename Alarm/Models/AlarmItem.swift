@@ -66,8 +66,8 @@ struct AlarmItem: Identifiable, Codable, Equatable {
         soundName = try container.decode(String.self, forKey: .soundName)
         snoozeEnabled = try container.decodeIfPresent(Bool.self, forKey: .snoozeEnabled) ?? true
         snoozeMinutes = min(max(try container.decodeIfPresent(Int.self, forKey: .snoozeMinutes) ?? 9, 1), 30)
-        skipHolidayEnabled = try container.decode(Bool.self, forKey: .skipHolidayEnabled)
-        smartMakeUpEnabled = try container.decode(Bool.self, forKey: .smartMakeUpEnabled)
+        skipHolidayEnabled = try container.decodeIfPresent(Bool.self, forKey: .skipHolidayEnabled) ?? true
+        smartMakeUpEnabled = try container.decodeIfPresent(Bool.self, forKey: .smartMakeUpEnabled) ?? false
         isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
