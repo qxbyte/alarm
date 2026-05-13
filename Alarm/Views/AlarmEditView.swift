@@ -17,6 +17,7 @@ struct AlarmEditView: View {
     @State private var snoozeEnabled: Bool
     @State private var snoozeMinutes: Int
     @State private var skipHolidayEnabled: Bool
+    @State private var smartMakeUpEnabled: Bool
 
     @State private var showSnoozePicker = false
 
@@ -32,6 +33,7 @@ struct AlarmEditView: View {
         _snoozeEnabled = State(initialValue: existing?.snoozeEnabled ?? true)
         _snoozeMinutes = State(initialValue: existing?.snoozeMinutes ?? 9)
         _skipHolidayEnabled = State(initialValue: existing?.skipHolidayEnabled ?? true)
+        _smartMakeUpEnabled = State(initialValue: existing?.smartMakeUpEnabled ?? true)
     }
 
     var body: some View {
@@ -195,6 +197,29 @@ struct AlarmEditView: View {
             }
             .padding(.horizontal, 18)
             .frame(height: 56)
+
+            if normalizedRepeatRule().preset == .weekdays {
+                divider
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("调休工作日响铃")
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundStyle(Color(white: 0.14))
+
+                        Text("工作日闹钟会在周末补班日照常生效")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundStyle(Color(white: 0.5))
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: $smartMakeUpEnabled)
+                        .labelsHidden()
+                }
+                .padding(.horizontal, 18)
+                .frame(minHeight: 72)
+            }
         }
         .background(RoundedRectangle(cornerRadius: panelCornerRadius).fill(Color.white))
     }
@@ -239,7 +264,7 @@ struct AlarmEditView: View {
             snoozeEnabled: snoozeEnabled,
             snoozeMinutes: snoozeMinutes,
             skipHolidayEnabled: skipHolidayEnabled,
-            smartMakeUpEnabled: false,
+            smartMakeUpEnabled: normalizedRepeatRule().preset == .weekdays && smartMakeUpEnabled,
             isEnabled: existing?.isEnabled ?? true,
             createdAt: existing?.createdAt ?? Date(),
             updatedAt: Date()

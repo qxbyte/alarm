@@ -305,6 +305,9 @@ struct AlarmListView: View {
 
     private func repeatSummary(for item: AlarmItem) -> String {
         let holidayText = item.skipHolidayEnabled ? "节假日跳过" : "节假日照常"
+        if item.repeatRule.preset == .weekdays, item.smartMakeUpEnabled {
+            return "\(item.repeatRule.displayText) · 含调休 · \(holidayText)"
+        }
         return "\(item.repeatRule.displayText) · \(holidayText)"
     }
 
