@@ -282,7 +282,7 @@ struct AlarmListView: View {
                 .foregroundStyle(Color(white: 0.12))
 
             if let nextDate {
-                Text("预计在 \(nextDate.alarmDisplayText()) 响铃")
+                Text("预计在 \(nextDate.alarmRelativeDisplayText()) 响铃")
                     .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(Color(white: 0.42))
 
@@ -318,8 +318,16 @@ struct AlarmListView: View {
 
     private func relativeTimeText(to date: Date) -> String {
         let interval = max(Int(date.timeIntervalSinceNow), 0)
-        let hours = interval / 3600
-        let minutes = (interval % 3600) / 60
+        let days = interval / 86_400
+        let hours = (interval % 86_400) / 3_600
+        let minutes = (interval % 3_600) / 60
+
+        if days > 0 {
+            if hours == 0 {
+                return "\(days) 天后"
+            }
+            return "\(days) 天 \(hours) 小时后"
+        }
 
         if hours == 0 {
             return "\(max(minutes, 1)) 分钟后"
