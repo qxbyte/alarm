@@ -116,7 +116,8 @@ final class AlarmStore: ObservableObject {
             return "暂无下次提醒"
         }
 
-        return "下次：\(nextDate.alarmDisplayText()) · 节假日跳过 \(item.skipHolidayEnabled ? "🟢" : "🔴")"
+        let holidayText = item.skipHolidayEnabled ? "跳过节假日" : "节假日照常"
+        return "下次：\(nextDate.alarmRelativeDisplayText()) · \(holidayText)"
     }
 
     func nextTriggerDate(for item: AlarmItem) -> Date? {
